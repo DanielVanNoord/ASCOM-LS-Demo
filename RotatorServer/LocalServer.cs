@@ -223,56 +223,36 @@ namespace ASCOM.Simulator
 			m_ComObjectAssys = new ArrayList();
 			m_ComObjectTypes = new ArrayList();
 
-            string assy = Assembly.GetEntryAssembly().Location;
-            string assyPath = Assembly.GetEntryAssembly().Location;
-
-            var executableFolder = Path.GetDirectoryName(assyPath);
-            var servedClassesPath = executableFolder;
-
-            DirectoryInfo d = new DirectoryInfo(servedClassesPath);
-            var assemblyFiles = d.GetFiles("*.dll");                        // We're only interested in .dll assemblies
-            foreach (FileInfo fi in assemblyFiles)
+            try
             {
-                string aPath = fi.FullName;
-                string fqClassName = fi.Name.Replace(fi.Extension, ""); // COM class FQN
+                //Switched this to only load types from this assembly
+                Assembly so = Assembly.GetExecutingAssembly();
+                //[TPL] Potential malicious code injection vector, consider using ReflectionOnlyLoad.
 
-                // First try to load the assembly and get the types for
-                // the class and the class factory. If this doesn't work ????
-                try
+                //PWGS Get the types in the assembly
+                Type[] types = so.GetTypes();
+                foreach (Type type in types)
                 {
-                    Assembly so = Assembly.LoadFrom(aPath);
-                        //[TPL] Potential malicious code injection vector, consider using ReflectionOnlyLoad.
+                    // PWGS Now checks the type rather than the assembly
+                    // Check to see if the type has the ServedClassName attribute, only use it if it does.
+                    MemberInfo info = type;// typeof(MyClass);
 
-                    //PWGS Get the types in the assembly
-                    Type[] types = so.GetTypes();
-                    foreach (Type type in types)
+                    object[] attrbutes = info.GetCustomAttributes(typeof(ServedClassNameAttribute), false);
+                    if (attrbutes.Length > 0)
                     {
-                        // PWGS Now checks the type rather than the assembly
-                        // Check to see if the type has the ServedClassName attribute, only use it if it does.
-                        MemberInfo info = type;// typeof(MyClass);
-
-                        object[] attrbutes = info.GetCustomAttributes(typeof(ServedClassNameAttribute), false);
-                        if (attrbutes.Length > 0)
-                        {
-                            m_ComObjectTypes.Add(type); //PWGS - much simpler
-                            m_ComObjectAssys.Add(so);
-                        }
+                        m_ComObjectTypes.Add(type); //PWGS - much simpler
+                        m_ComObjectAssys.Add(so);
                     }
                 }
-                catch (BadImageFormatException)
-                {
-                    // Probably an attempt to load a Win32 DLL (i.e. not a .net assembly)
-                    // Just swallow the exception and continue to the next item.
-                    continue;
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show("Failed to load served COM class assembly " + fi.Name + " - " + e.Message,
-                                    "Rotator Simulator", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-                    return false;
-                }
             }
-		    return true;
+            catch (Exception e)
+            {
+                MessageBox.Show("Failed to load served COM class assembly from within this local server" + " - " + e.Message,
+                                "Rotator Simulator", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                return false;
+            }
+
+            return true;
 		}
 		#endregion
 
