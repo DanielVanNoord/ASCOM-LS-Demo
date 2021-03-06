@@ -117,7 +117,6 @@ namespace ASCOM.Simulator
 		protected static int m_iObjsInUse;						// Keeps a count on the total number of objects alive.
 		protected static int m_iServerLocks;					// Keeps a lock count on this application.
 		protected static bool m_bComStart;						// True if server started by COM (-embedding)
-		protected static ArrayList m_ComObjectAssys;			// Dynamically loaded assemblies containing served COM objects
 		protected static ArrayList m_ComObjectTypes;			// Served COM object types
 		protected static ArrayList m_ClassFactories;			// Served COM object class factories
 		protected static string m_sAppId = "{770ba0e5-fb34-47c8-93df-1ac09118edb8}";	// Our AppId
@@ -220,7 +219,6 @@ namespace ASCOM.Simulator
 		//
 		protected static bool LoadComObjectAssemblies()
 		{
-			m_ComObjectAssys = new ArrayList();
 			m_ComObjectTypes = new ArrayList();
 
             try
@@ -241,7 +239,6 @@ namespace ASCOM.Simulator
                     if (attrbutes.Length > 0)
                     {
                         m_ComObjectTypes.Add(type); //PWGS - much simpler
-                        m_ComObjectAssys.Add(so);
                     }
                 }
             }
